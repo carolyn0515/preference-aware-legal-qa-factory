@@ -20,3 +20,5 @@ lint:
 
 check: lint test
 
+bronze:
+	$(PYTHON) scripts/extract_bronze.py
