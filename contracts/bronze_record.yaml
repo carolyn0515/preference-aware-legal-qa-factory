@@ -1,0 +1,184 @@
+schema_version: "1.0"
+
+dataset:
+  name: "bronze_pdf_block"
+  layer: "BRONZE"
+  description: >
+    Text blocks extracted from immutable Raw PDF objects while preserving
+    their physical location and extraction metadata.
+
+  grain: "one text block per PDF page"
+
+ownership:
+  data_owner: "legal_data_team"
+  technical_owner: "legal_qa_factory"
+
+keys:
+  primary_key:
+    - "bronze_record_id"
+
+  natural_key:
+    - "raw_object_id"
+    - "page_number"
+    - "block_index"
+
+columns:
+  bronze_record_id:
+    type: "string"
+    nullable: false
+    description: >
+      Deterministic identifier generated from the Raw Object ID,
+      page number, block index, and normalized text hash.
+
+  raw_object_id:
+    type: "string"
+    nullable: false
+    description: "Identifier of the immutable source Raw Object."
+
+  source_id:
+    type: "string"
+    nullable: false
+    description: "Logical identifier of the registered source."
+
+  source_type:
+    type: "string"
+    nullable: false
+    allowed_values:
+      - "STATUTE"
+      - "ENFORCEMENT_DECREE"
+      - "OFFICIAL_FAQ"
+
+  content_hash:
+    type: "string"
+    nullable: false
+    description: "SHA-256 hash of the source PDF."
+
+  page_number:
+    type: "int32"
+    nullable: false
+    minimum: 1
+    description: "One-based page number used for human-facing citations."
+
+  block_index:
+    type: "int32"
+    nullable: false
+    minimum: 0
+    description: "Zero-based text block position within the PDF page."
+
+  bounding_box:
+    type: "struct"
+    nullable: false
+    fields:
+      x0:
+        type: "float32"
+        nullable: false
+      y0:
+        type: "float32"
+        nullable: false
+      x1:
+        type: "float32"
+        nullable: false
+      y1:
+        type: "float32"
+        nullable: false
+
+  raw_text:
+    type: "large_string"
+    nullable: false
+    description: "Text extracted from the PDF without semantic rewriting."
+
+  normalized_text:
+    type: "large_string"
+    nullable: false
+    description: >
+      Text after deterministic Unicode and whitespace normalization.
+
+  text_sha256:
+    type: "string"
+    nullable: false
+    description: "SHA-256 hash of normalized_text."
+
+  character_count:
+    type: "int32"
+    nullable: false
+    minimum: 1
+
+  parser_name:
+    type: "string"
+    nullable: false
+
+  parser_version:
+    type: "string"
+    nullable: false
+
+  extraction_run_id:
+    type: "string"
+    nullable: false
+
+  extracted_at:
+    type: "timestamp_utc"
+    nullable: false
+
+null_semantics:
+  rule: >
+    Required fields must never be represented by empty strings.
+    If required information cannot be extracted, the record must be
+    quarantined instead of being published with a null value.
+
+quality_rules:
+  - rule_id: "BRONZE_PRIMARY_KEY_NOT_NULL"
+    severity: "BLOCKER"
+    description: "bronze_record_id must not be null."
+
+  - rule_id: "BRONZE_PRIMARY_KEY_UNIQUE"
+    severity: "BLOCKER"
+    description: "bronze_record_id must be unique within the dataset."
+
+  - rule_id: "BRONZE_RAW_OBJECT_REQUIRED"
+    severity: "BLOCKER"
+    description: "Every record must reference an existing Raw Object."
+
+  - rule_id: "BRONZE_TEXT_REQUIRED"
+    severity: "ERROR"
+    description: "normalized_text must contain at least one visible character."
+
+  - rule_id: "BRONZE_VALID_PAGE_NUMBER"
+    severity: "BLOCKER"
+    description: "page_number must be greater than or equal to 1."
+
+  - rule_id: "BRONZE_VALID_BLOCK_INDEX"
+    severity: "ERROR"
+    description: "block_index must be greater than or equal to 0."
+
+  - rule_id: "BRONZE_VALID_BOUNDING_BOX"
+    severity: "ERROR"
+    description: "x1 must be greater than or equal to x0 and y1 must be greater than or equal to y0."
+
+  - rule_id: "BRONZE_TEXT_HASH_MATCH"
+    severity: "BLOCKER"
+    description: "text_sha256 must match the SHA-256 hash of normalized_text."
+
+  - rule_id: "BRONZE_SOURCE_HASH_MATCH"
+    severity: "BLOCKER"
+    description: "content_hash must match the referenced Raw Object manifest."
+
+lineage:
+  upstream:
+    dataset: "raw_object"
+    join_key: "raw_object_id"
+
+  downstream:
+    datasets:
+      - "silver_legal_node"
+      - "retrieval_chunk"
+
+compatibility:
+  mode: "BACKWARD"
+  breaking_changes_require_major_version: true
+
+retention:
+  policy: "RETAIN_WHILE_SOURCE_IS_ACTIVE"
+
+security:
+  access_classification: "INHERIT_FROM_SOURCE"
+  external_model_allowed: false
