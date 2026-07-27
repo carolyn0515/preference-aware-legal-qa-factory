@@ -1,0 +1,84 @@
+schema_version: "1.0"
+
+source:
+  source_id: "KR_FSTA_ENFORCEMENT_DECREE"
+  source_type: "ENFORCEMENT_DECREE"
+  jurisdiction_code: "KR"
+
+  title:
+    ko: "하도급거래 공정화에 관한 법률 시행령"
+    en: "Enforcement Decree of the Fair Transactions in Subcontracting Act"
+
+  short_title:
+    ko: "하도급법 시행령"
+    en: "Fair Subcontract Transactions Act Enforcement Decree"
+
+  issuing_authority:
+    code: "KR_PRESIDENT"
+    name_ko: "대한민국 대통령"
+    name_en: "President of the Republic of Korea"
+
+  authority_level: "DELEGATED_LEGISLATION"
+  is_authoritative: true
+
+document:
+  document_number:
+    type: "PRESIDENTIAL_DECREE"
+    number: 36423
+    display_value: "대통령령 제36423호"
+
+  document_version_date: "2026-07-01"
+  effective_from: null
+  effective_to: null
+
+  date_metadata:
+    date_source: "FILENAME"
+    date_meaning: "UNVERIFIED"
+    verification_status: "PENDING"
+
+file:
+  original_filename: "하도급거래 공정화에 관한 법률 시행령(대통령령)(제36423호)(20260701).pdf"
+  normalized_filename: "fair_subcontract_transactions_act_enforcement_decree_no_36423_20260701.pdf"
+  input_path: "data/input/fair_subcontract_transactions_act_enforcement_decree_no_36423_20260701.pdf"
+  media_type: "application/pdf"
+  language: "ko"
+
+ingestion:
+  parser_type: "STATUTE_PDF"
+  enabled: true
+  expected_structure:
+    - "CHAPTER"
+    - "SECTION"
+    - "ARTICLE"
+    - "PARAGRAPH"
+    - "ITEM"
+    - "SUBITEM"
+
+  preserve_page_coordinates: true
+  preserve_original_text: true
+  calculate_content_hash: true
+  duplicate_policy: "CONTENT_HASH"
+
+legal_metadata:
+  legal_weight: 90
+  may_establish_legal_facts: true
+  may_be_used_as_primary_evidence: true
+  requires_effective_date_validation: true
+
+  parent_legislation:
+    source_id: "KR_FSTA_ACT"
+    relation_type: "IMPLEMENTS"
+
+security:
+  access_classification: "PUBLIC"
+  contains_customer_data: false
+  external_model_allowed: true
+
+ownership:
+  data_owner: "legal_data_team"
+  technical_owner: "legal_qa_factory"
+
+provenance:
+  official_uri: null
+  acquisition_method: "LOCAL_FILE"
+  verification_status: "PENDING"

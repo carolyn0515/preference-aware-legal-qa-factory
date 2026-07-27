@@ -1,0 +1,86 @@
+schema_version: "1.0"
+
+source:
+  source_id: "KR_KFTC_FSTA_FAQ_202605"
+  source_type: "OFFICIAL_FAQ"
+  jurisdiction_code: "KR"
+
+  title:
+    ko: "하도급법 FAQ"
+    en: "Fair Subcontract Transactions Act FAQ"
+
+  short_title:
+    ko: "하도급법 FAQ"
+    en: "FSTA FAQ"
+
+  issuing_authority:
+    code: "KR_KFTC"
+    name_ko: "공정거래위원회"
+    name_en: "Korea Fair Trade Commission"
+
+  authority_level: "OFFICIAL_GUIDANCE"
+  is_authoritative: true
+
+document:
+  document_number: null
+
+  publication_period:
+    year: 2026
+    month: 5
+    day: null
+    precision: "MONTH"
+
+  document_version_date: null
+  effective_from: null
+  effective_to: null
+
+  date_metadata:
+    date_source: "FILENAME"
+    date_meaning: "PUBLICATION_PERIOD"
+    verification_status: "PENDING"
+
+file:
+  original_filename: "하도급법 FAQ_공정거래위원회_202605.pdf"
+  normalized_filename: "fair_subcontract_transactions_act_faq_kftc_202605.pdf"
+  input_path: "data/input/fair_subcontract_transactions_act_faq_kftc_202605.pdf"
+  media_type: "application/pdf"
+  language: "ko"
+
+ingestion:
+  parser_type: "FAQ_PDF"
+  enabled: true
+  expected_structure:
+    - "CATEGORY"
+    - "QUESTION"
+    - "ANSWER"
+    - "LEGAL_REFERENCE"
+
+  preserve_page_coordinates: true
+  preserve_original_text: true
+  calculate_content_hash: true
+  duplicate_policy: "CONTENT_HASH"
+
+legal_metadata:
+  legal_weight: 60
+  may_establish_legal_facts: false
+  may_be_used_as_primary_evidence: false
+  may_be_used_as_supporting_evidence: true
+  requires_primary_source_verification: true
+
+  interpreted_legislation:
+    source_id: "KR_FSTA_ACT"
+    relation_type: "INTERPRETS"
+
+security:
+  access_classification: "PUBLIC"
+  contains_customer_data: false
+  external_model_allowed: true
+
+ownership:
+  data_owner: "legal_data_team"
+  technical_owner: "legal_qa_factory"
+
+provenance:
+  official_uri: null
+  acquisition_method: "LOCAL_FILE"
+  verification_status: "PENDING"
