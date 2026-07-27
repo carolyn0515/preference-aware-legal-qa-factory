@@ -65,6 +65,12 @@ columns:
     minimum: 0
     description: "Zero-based text block position within the PDF page."
 
+  parser_block_number:
+    type: "int32"
+    nullable: false
+    minimum: 0
+    description: "Original block number assigned by PyMuPDF."
+
   bounding_box:
     type: "struct"
     nullable: false

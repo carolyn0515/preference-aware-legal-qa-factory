@@ -2,6 +2,7 @@ import hashlib
 import json
 import re
 import unicodedata
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +16,7 @@ BRONZE_DATA_DIR = PROJECT_ROOT / "data" / "bronze"
 
 def normalize_text(text: str) -> str:
     normalized = unicodedata.normalize("NFC", text)
-    normalized = normalized.replcae("\u00a0", " ")
+    normalized = normalized.replace("\u00a0", " ")
     normalized = re.sub(r"\s+", " ", normalized)
 
     return normalized.strip()
@@ -60,7 +61,7 @@ def load_manifest(
         )
 
     required_fields = {
-        "raw_object_id"
+        "raw_object_id",
         "source_id",
         "source_type",
         "file",
@@ -77,7 +78,7 @@ def load_manifest(
 
     if not isinstance(file_metadata, dict):
         raise ValueError(
-            "manifest field 'file; must be a mapping: "
+            "manifest field 'file' must be a mapping: "
             f"{manifest_path}"
         )
 
@@ -95,6 +96,8 @@ def extract_pdf_blocks(
     source_id: str,
     source_type: str,
     content_hash: str,
+    extraction_run_id: str,
+    extracted_at: str,
 ) -> list[dict[str, Any]]:
     records: list[dict[str, Any]] = []
 
@@ -116,7 +119,7 @@ def extract_pdf_blocks(
                         x1,
                         y1,
                         raw_text,
-                        _,
+                        parser_block_number,
                         block_type,
                     ) = block[:7]
 
@@ -160,6 +163,9 @@ def extract_pdf_blocks(
                         "block_index": (
                             text_block_index
                         ),
+                        "parser_block_number": int(
+                            parser_block_number
+                        ),
                         "bounding_box": {
                             "x0": float(x0),
                             "y0": float(y0),
@@ -174,10 +180,14 @@ def extract_pdf_blocks(
                         "character_count": len(
                             normalized_text
                         ),
-                        "parser_name": "PyMyPDF",
+                        "parser_name": "PyMuPDF",
                         "parser_version": (
                             fitz.VersionBind
                         ),
+                        "extraction_run_id": (
+                            extraction_run_id
+                        ),
+                        "extracted_at": extracted_at,
                     }
 
                     records.append(record)
@@ -261,6 +271,8 @@ def print_record_samples(
 
 def process_manifest(
     manifest_path: Path,
+    extraction_run_id: str,
+    extracted_at: str,
 ) -> int:
     manifest = load_manifest(manifest_path)
     raw_object_id = str(
@@ -292,6 +304,8 @@ def process_manifest(
         source_id=source_id,
         source_type=source_type,
         content_hash=content_hash,
+        extraction_run_id=extraction_run_id,
+        extracted_at=extracted_at,
     )
 
     output_path = build_output_path(
@@ -316,6 +330,17 @@ def process_manifest(
     return len(records)
 
 def main() -> int:
+    extraction_started_at = datetime.now(
+        UTC
+    )
+    extraction_run_id = (
+        "BRONZE-"
+        + extraction_started_at.strftime(
+            "%Y%m%dT%H%M%S%fZ"
+        )
+    )
+    extracted_at = extraction_started_at.isoformat()
+
     manifest_paths = sorted(
         RAW_DATA_DIR.glob(
             "*/*/manifest.yaml"
@@ -331,12 +356,18 @@ def main() -> int:
 
     total_records = 0
     processed_objects = 0
-    faild_objects = 0
+    failed_objects = 0
+
+    print("[LEGAL QA FACTORY — BRONZE EXTRACTION]")
+    print(f"[RUN] {extraction_run_id}")
+    print()
 
     for manifest_path in manifest_paths:
         try:
             record_count = process_manifest(
-                manifest_path
+                manifest_path=manifest_path,
+                extraction_run_id=extraction_run_id,
+                extracted_at=extracted_at,
             )
             total_records += record_count
             processed_objects += 1
