@@ -2,7 +2,7 @@ PYTHON := .venv/bin/python
 PIP := .venv/bin/pip
 AS_OF_DATE ?= 2026-07-23
 
-.PHONY: setup ingest test lint check
+.PHONY: setup ingest bronze test lint check
 
 setup:
 	python3 -m venv .venv
