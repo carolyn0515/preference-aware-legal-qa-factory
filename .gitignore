@@ -1,7 +1,9 @@
-# macOS
+# macOS / editors
 .DS_Store
+.idea/
+.vscode/
 
-# Python
+# Python build and test state
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -10,43 +12,33 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
-
-# Virtual environments and local secrets
 .venv/
+
+# Secrets
 .env
 .env.*
 !.env.example
 
-# IDE
-.idea/
-.vscode/
+# Local source PDFs and customer data
+data/input/
+data/reference/**
+!data/reference/.gitkeep
 
-# Generated data: preserve directory structure, not runtime artifacts
+# Immutable/generated data products
 data/raw/**
 !data/raw/.gitkeep
 data/bronze/**
 !data/bronze/.gitkeep
 data/silver/**
 !data/silver/.gitkeep
-data/serving/**
-!data/serving/.gitkeep
+data/artifacts/**
+!data/artifacts/.gitkeep
 data/published/**
 !data/published/.gitkeep
 data/quarantine/**
 !data/quarantine/.gitkeep
-data/manifests/**
-!data/manifests/.gitkeep
 
-# Customer/reference data must never be committed by default
-data/reference/**
-!data/reference/.gitkeep
-
-# Source PDFs are local inputs. Commit only explicit synthetic fixtures.
-data/input/*.pdf
-!tests/fixtures/**/*.pdf
-
-# Temporary and generated reports
-*.tmp
+# Runtime output
 reports/
 logs/
-
+*.tmp

@@ -1,8 +1,7 @@
 PYTHON := .venv/bin/python
 PIP := .venv/bin/pip
-AS_OF_DATE ?= 2026-07-23
 
-.PHONY: setup ingest bronze test lint check
+.PHONY: setup ingest bronze silver analyze-reference infer-lineage generate evaluate publish test lint check demo
 
 setup:
 	python3 -m venv .venv
@@ -12,6 +11,27 @@ setup:
 ingest:
 	$(PYTHON) scripts/ingest_sources.py
 
+bronze:
+	$(PYTHON) scripts/build_bronze.py
+
+silver:
+	$(PYTHON) scripts/build_silver.py
+
+analyze-reference:
+	$(PYTHON) scripts/analyze_reference.py
+
+infer-lineage:
+	$(PYTHON) scripts/infer_lineage.py
+
+generate:
+	$(PYTHON) scripts/generate_qa.py
+
+evaluate:
+	$(PYTHON) scripts/evaluate_qa.py
+
+publish:
+	$(PYTHON) scripts/publish_snapshot.py
+
 test:
 	$(PYTHON) -m pytest
 
@@ -20,5 +40,4 @@ lint:
 
 check: lint test
 
-bronze:
-	$(PYTHON) scripts/extract_bronze.py
+demo: ingest bronze
