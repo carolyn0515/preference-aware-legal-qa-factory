@@ -1,0 +1,13 @@
+schema_version: "1.0"
+dataset: {name: "generated_legal_qa", layer: "PUBLISHED"}
+grain: "one generated QA example"
+required_fields:
+  - "qa_id"
+  - "question"
+  - "answer"
+  - "evidence_ids"
+  - "source_snapshot_id"
+  - "reference_profile_version"
+  - "blueprint_version"
+  - "generator_config_hash"
+  - "evaluation_result"

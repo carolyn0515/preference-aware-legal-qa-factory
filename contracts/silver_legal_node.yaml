@@ -1,0 +1,8 @@
+schema_version: "1.0"
+dataset: {name: "silver_legal_node", layer: "SILVER"}
+grain: "one versioned canonical legal structure node"
+primary_key: ["legal_node_id"]
+required_lineage: ["source_id", "source_version_hash", "bronze_record_ids"]
+temporal_model:
+  valid_time: ["valid_from", "valid_to"]
+  transaction_time: ["transaction_from", "transaction_to"]

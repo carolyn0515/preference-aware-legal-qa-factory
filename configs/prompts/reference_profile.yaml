@@ -1,0 +1,7 @@
+schema_version: "1.0"
+prompt_id: "reference_profile_v1"
+purpose: "Extract customer preferences without treating reference answers as legal truth."
+immutable_rules:
+  - "Separate observed facts from inferred preferences."
+  - "Do not infer legal correctness from style agreement."
+  - "Return structured JSON only."

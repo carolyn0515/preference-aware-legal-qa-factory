@@ -1,0 +1,1 @@
+"""Canonical legal-document normalization."""

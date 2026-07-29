@@ -1,0 +1,12 @@
+schema_version: "1.0"
+pipeline_id: "legal_qa_factory_default"
+as_of_date: "2026-07-27"
+layers:
+  raw: {enabled: true}
+  bronze: {enabled: true}
+  silver: {enabled: false}
+  reference_analysis: {enabled: false}
+  lineage_inference: {enabled: false}
+  generation: {enabled: false}
+  evaluation: {enabled: false}
+  publishing: {enabled: false}

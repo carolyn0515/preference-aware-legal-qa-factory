@@ -39,7 +39,7 @@ def quarantine_file(
     quarantined_pdf = quarantine_path / "original.pdf"
     error_manifest = quarantine_path / "error.yaml"
 
-    if not quarantined_pdf.exist():
+    if not quarantined_pdf.exists():
         shutil.copy2(file_path, quarantined_pdf)
 
     error_data = {
@@ -76,9 +76,9 @@ def write_manifest(
         "file": {
             "original_filename": config["file"]["original_filename"],
             "normalized_filename": config["file"]["normalized_filename"],
-            "stored_fliename": stored_path.name,
+            "stored_filename": stored_path.name,
             "media_type": config["file"]["media_type"],
-            "language": config["file"]["langauge"],
+            "language": config["file"]["language"],
             "size_bytes": size_bytes,
             "page_count": page_count,
             "sha256": content_hash,

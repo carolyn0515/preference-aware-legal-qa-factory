@@ -1,0 +1,1 @@
+"""Atomic legal proposition extraction."""

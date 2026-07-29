@@ -1,0 +1,7 @@
+schema_version: "1.0"
+dataset: "bronze_pdf_block"
+blocking_rules:
+  - "primary_key_unique"
+  - "source_hash_match"
+  - "text_hash_match"
+  - "valid_physical_coordinates"

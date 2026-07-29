@@ -1,0 +1,6 @@
+schema_version: "1.0"
+dataset: {name: "reference_qa", layer: "REFERENCE"}
+grain: "one customer-provided question-answer pair"
+primary_key: ["reference_qa_id"]
+truth_semantics: "PREFERENCE_EVIDENCE_ONLY"
+required_fields: ["question", "answer", "customer_id", "reference_version"]

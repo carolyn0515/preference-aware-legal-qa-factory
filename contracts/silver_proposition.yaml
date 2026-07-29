@@ -1,0 +1,3 @@
+schema_version: "1.0"
+dataset: {name: "silver_legal_proposition", layer: "SILVER"}
+grain: "one atomic legal proposition extracted from one structural legal node"

@@ -1,0 +1,4 @@
+schema_version: "1.0"
+dataset: {name: "claim_evidence_lineage", layer: "ARTIFACT"}
+grain: "one observed or inferred claim-to-evidence edge"
+lineage_kinds: ["OBSERVED", "INFERRED"]

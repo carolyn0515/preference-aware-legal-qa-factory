@@ -1,0 +1,17 @@
+schema_version: "1.0"
+parser_id: "korean_statute_structure_v1"
+status: "EXPERIMENTAL"
+supported_source_types:
+  - "STATUTE"
+  - "ENFORCEMENT_DECREE"
+structure_levels:
+  - "ARTICLE"
+  - "PARAGRAPH"
+  - "ITEM"
+  - "SUBITEM"
+document_regions:
+  - "BODY"
+  - "ADDENDUM"
+article_heading_evidence:
+  lexical_pattern_required: true
+  bold_validation_enabled: true

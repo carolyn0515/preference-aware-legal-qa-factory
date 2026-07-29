@@ -1,0 +1,17 @@
+schema_version: "1.0"
+deterministic_gates:
+  - "evidence_exists"
+  - "citation_resolves"
+  - "legal_version_valid_at_as_of_date"
+  - "question_not_duplicate"
+  - "answer_contains_no_unsupported_claim"
+judge_metrics:
+  - "legal_groundedness"
+  - "answer_relevance"
+  - "customer_preference_alignment"
+human_review:
+  strategy: "risk_stratified"
+  required_for:
+    - "conflicting_authorities"
+    - "low_lineage_confidence"
+    - "high_impact_legal_advice"

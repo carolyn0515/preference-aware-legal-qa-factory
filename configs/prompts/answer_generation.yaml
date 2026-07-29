@@ -1,0 +1,8 @@
+schema_version: "1.0"
+prompt_id: "grounded_answer_v1"
+purpose: "Generate a preference-aligned answer from retrieved legal evidence."
+immutable_rules:
+  - "Every legal claim must map to supplied evidence."
+  - "Primary law outranks official guidance."
+  - "State uncertainty and missing facts."
+  - "Do not fabricate article numbers or deadlines."
