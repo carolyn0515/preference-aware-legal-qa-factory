@@ -23,7 +23,7 @@ def publish_parquet(
     table = pa.Table.from_pylist(records, schema=BRONZE_SCHEMA)
     # 여기서 arrow table로 변환
     pq.write_table(table, temporary, compression="zstd", use_dictionary=True)
-    # zstd = Zstandard 압축 
+    # zstd = Zstandard 압축
     # 같은 값이 많으면 그냥 저장하지 않고 인코딩같은거 함 -> parquet의 대표적인 최적화
     readback = pq.read_table(temporary)
     # 방금 저장한 파일 다시 읽음 -> 정상 저장 check

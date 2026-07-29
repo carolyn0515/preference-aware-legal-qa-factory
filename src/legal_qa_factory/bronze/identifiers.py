@@ -11,4 +11,6 @@ def build_bronze_record_id(
 ) -> str:
     identity = f"{raw_object_id}|{page_number}|{block_index}|{text_sha256}"
     return f"BRZ-{sha256_text(identity)}"
+
+
 # record를 단순 row number가 아니라 원본 위치와 내용에 묶어 식별
