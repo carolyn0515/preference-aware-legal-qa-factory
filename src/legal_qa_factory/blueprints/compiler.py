@@ -72,6 +72,33 @@ def pattern_identity(
     return "RBP-" + sha256_text(canonical)[:16]
 
 
+def pattern_family(
+    reference_intent: str,
+    answer_flow: list[str],
+    retrieval_actions: list[str],
+) -> str:
+    roles = set(answer_flow)
+    actions = set(retrieval_actions)
+    if reference_intent == "sanction" or "SANCTION_NOTICE" in roles:
+        return "SANCTION_REMEDY"
+    if reference_intent == "deadline":
+        return "DEADLINE_CALCULATION"
+    if (
+        reference_intent in {"procedure", "permission"}
+        or "PROCEDURE" in roles
+        or "FOLLOW_DECREE_DELEGATION" in actions
+        or "FOLLOW_ARTICLE_REFERENCE" in actions
+    ):
+        return "PROCEDURE_DELEGATION"
+    if (
+        reference_intent in {"condition_lookup", "exception_lookup"}
+        or "CONDITION" in roles
+        or "EXCEPTION_NOTICE" in roles
+    ):
+        return "CONDITION_EXCEPTION"
+    return "DIRECT_RULE"
+
+
 def compile_training_rows(
     qa_rows: list[dict[str, Any]],
     qa_flows: list[dict[str, Any]],
@@ -96,6 +123,7 @@ def compile_training_rows(
         parent_example_id = metadata.get(
             "parent_example_id", qa["reference_qa_id"]
         )
+        reference_intent = metadata.get("intent", "unknown")
         training_rows.append(
             {
                 "reference_qa_id": qa_id,
@@ -106,6 +134,12 @@ def compile_training_rows(
                 "question": qa["question"],
                 **question_features(qa["question"]),
                 "pattern_id": pattern_id,
+                "pattern_family": pattern_family(
+                    reference_intent, answer_flow, retrieval_actions
+                ),
+                "family_label_source": (
+                    "REFERENCE_METADATA_AND_LINEAGE_RULE_V1"
+                ),
                 "answer_flow": answer_flow,
                 "retrieval_actions": retrieval_actions,
                 "requires_decree": (

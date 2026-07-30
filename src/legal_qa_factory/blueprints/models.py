@@ -19,6 +19,8 @@ POLICY_TRAINING_SCHEMA = pa.schema(
         pa.field("asks_deadline", pa.bool_(), nullable=False),
         pa.field("asks_sanction", pa.bool_(), nullable=False),
         pa.field("pattern_id", pa.string(), nullable=False),
+        pa.field("pattern_family", pa.string(), nullable=False),
+        pa.field("family_label_source", pa.string(), nullable=False),
         pa.field("answer_flow", pa.list_(pa.string()), nullable=False),
         pa.field("retrieval_actions", pa.list_(pa.string()), nullable=False),
         pa.field("requires_decree", pa.bool_(), nullable=False),
@@ -30,6 +32,6 @@ POLICY_TRAINING_SCHEMA = pa.schema(
     ],
     metadata={
         b"schema_name": b"policy_training_example",
-        b"schema_version": b"1.1",
+        b"schema_version": b"1.2",
     },
 )
