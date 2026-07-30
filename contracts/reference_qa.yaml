@@ -4,3 +4,9 @@ grain: "one customer-provided question-answer pair"
 primary_key: ["reference_qa_id"]
 truth_semantics: "PREFERENCE_EVIDENCE_ONLY"
 required_fields: ["question", "answer", "customer_id", "reference_version"]
+source_kinds: ["CUSTOMER_GOLD", "SYNTHETIC"]
+rules:
+  - "one input file contains exactly one customer_id and reference_version"
+  - "normalized questions are unique within an input version"
+  - "customer answers are preference evidence, never legal ground truth"
+  - "observed evidence IDs must not be inferred during ingestion"
