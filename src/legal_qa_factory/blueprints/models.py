@@ -5,6 +5,7 @@ import pyarrow as pa
 POLICY_TRAINING_SCHEMA = pa.schema(
     [
         pa.field("reference_qa_id", pa.string(), nullable=False),
+        pa.field("parent_example_id", pa.string(), nullable=False),
         pa.field("customer_id", pa.string(), nullable=False),
         pa.field("reference_version", pa.string(), nullable=False),
         pa.field("source_kind", pa.string(), nullable=False),
@@ -29,6 +30,6 @@ POLICY_TRAINING_SCHEMA = pa.schema(
     ],
     metadata={
         b"schema_name": b"policy_training_example",
-        b"schema_version": b"1.0",
+        b"schema_version": b"1.1",
     },
 )

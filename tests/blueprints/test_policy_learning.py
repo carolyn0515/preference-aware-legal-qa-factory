@@ -51,6 +51,7 @@ def test_synthetic_small_dataset_is_blocked_but_knn_can_demo() -> None:
         ],
     )
     assert training_gate(rows)["status"] == "BLOCKED"
+    assert rows[0]["parent_example_id"] == "Q1"
     result = recommend_knn("직접지급 요건은?", rows, k=1)
     assert result["status"] == "EXPERIMENTAL_RECOMMENDATION"
     assert result["retrieval_actions"] == [

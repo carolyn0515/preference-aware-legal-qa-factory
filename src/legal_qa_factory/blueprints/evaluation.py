@@ -9,6 +9,10 @@ MINIMUM_EXAMPLES = 20
 MINIMUM_CLASS_SUPPORT = 5
 
 
+def _group_id(row: dict[str, Any]) -> str:
+    return row.get("parent_example_id") or row["reference_qa_id"]
+
+
 def classification_metrics(
     truth: list[str], predictions: list[str]
 ) -> dict[str, Any]:
@@ -74,9 +78,17 @@ def classification_metrics(
 
 
 def reportability(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    supports = Counter(row["pattern_id"] for row in rows)
+    pattern_by_group: dict[str, str] = {}
+    for row in rows:
+        group_id = _group_id(row)
+        previous = pattern_by_group.setdefault(group_id, row["pattern_id"])
+        if previous != row["pattern_id"]:
+            raise ValueError(
+                f"group {group_id} contains inconsistent pattern labels"
+            )
+    supports = Counter(pattern_by_group.values())
     blockers = []
-    if len(rows) < MINIMUM_EXAMPLES:
+    if len(pattern_by_group) < MINIMUM_EXAMPLES:
         blockers.append("MINIMUM_EXAMPLES_NOT_MET")
     if len(supports) < 2:
         blockers.append("MINIMUM_PATTERN_COUNT_NOT_MET")
@@ -93,39 +105,52 @@ def reportability(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "status": "NOT_REPORTABLE" if blockers else "REPORTABLE",
         "minimum_examples": MINIMUM_EXAMPLES,
         "minimum_class_support": MINIMUM_CLASS_SUPPORT,
+        "physical_row_count": len(rows),
+        "independent_group_count": len(pattern_by_group),
         "class_support": dict(sorted(supports.items())),
         "under_supported_patterns": singleton,
         "blockers": blockers,
     }
 
 
-def leave_one_out_knn(
+def leave_one_group_out_knn(
     rows: list[dict[str, Any]], *, k: int
 ) -> dict[str, Any]:
     truth, predictions = [], []
     prediction_rows = []
-    for index, held_out in enumerate(rows):
-        training = rows[:index] + rows[index + 1 :]
+    group_ids = sorted({_group_id(row) for row in rows})
+    for held_out_group in group_ids:
+        held_out_rows = [
+            row for row in rows if _group_id(row) == held_out_group
+        ]
+        training = [
+            row for row in rows if _group_id(row) != held_out_group
+        ]
         if not training:
-            raise ValueError("leave-one-out evaluation requires at least 2 rows")
-        result = recommend_knn(
-            held_out["question"], training, k=min(k, len(training))
-        )
-        truth.append(held_out["pattern_id"])
-        predictions.append(result["pattern_id"])
-        prediction_rows.append(
-            {
-                "reference_qa_id": held_out["reference_qa_id"],
-                "expected_pattern_id": held_out["pattern_id"],
-                "predicted_pattern_id": result["pattern_id"],
-                "correct": held_out["pattern_id"] == result["pattern_id"],
-                "maximum_similarity": result["maximum_similarity"],
-                "vote_share": result["vote_share"],
-            }
-        )
+            raise ValueError(
+                "leave-one-group-out evaluation requires at least 2 groups"
+            )
+        for held_out in held_out_rows:
+            result = recommend_knn(
+                held_out["question"], training, k=min(k, len(training))
+            )
+            truth.append(held_out["pattern_id"])
+            predictions.append(result["pattern_id"])
+            prediction_rows.append(
+                {
+                    "reference_qa_id": held_out["reference_qa_id"],
+                    "parent_example_id": held_out_group,
+                    "expected_pattern_id": held_out["pattern_id"],
+                    "predicted_pattern_id": result["pattern_id"],
+                    "correct": held_out["pattern_id"] == result["pattern_id"],
+                    "maximum_similarity": result["maximum_similarity"],
+                    "vote_share": result["vote_share"],
+                }
+            )
     return {
         "model_id": f"weighted_knn_k{k}_v1",
-        "evaluation_strategy": "LEAVE_ONE_OUT",
+        "evaluation_strategy": "LEAVE_ONE_PARENT_GROUP_OUT",
+        "independent_group_count": len(group_ids),
         "metrics": classification_metrics(truth, predictions),
         "predictions": prediction_rows,
     }
@@ -136,7 +161,7 @@ def benchmark_policy_models(
 ) -> dict[str, Any]:
     gate = reportability(rows)
     effective_k = sorted({min(k, len(rows) - 1) for k in k_values if k > 0})
-    models = [leave_one_out_knn(rows, k=k) for k in effective_k]
+    models = [leave_one_group_out_knn(rows, k=k) for k in effective_k]
     leader = max(
         models,
         key=lambda model: (

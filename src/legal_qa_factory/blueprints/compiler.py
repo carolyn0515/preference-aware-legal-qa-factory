@@ -90,9 +90,16 @@ def compile_training_rows(
         )
         pattern_id = pattern_identity(answer_flow, retrieval_actions)
         customer_gold = qa["source_kind"] == "CUSTOMER_GOLD"
+        metadata = qa.get("metadata")
+        if metadata is None:
+            metadata = json.loads(qa.get("metadata_json", "{}"))
+        parent_example_id = metadata.get(
+            "parent_example_id", qa["reference_qa_id"]
+        )
         training_rows.append(
             {
                 "reference_qa_id": qa_id,
+                "parent_example_id": parent_example_id,
                 "customer_id": qa["customer_id"],
                 "reference_version": qa["reference_version"],
                 "source_kind": qa["source_kind"],
