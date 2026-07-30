@@ -90,3 +90,67 @@ def aggregate_flow_patterns(flows: list[dict[str, Any]]) -> dict[str, Any]:
             "minimum_support_rate": 0.5,
         },
     }
+
+
+def build_tree_flows(
+    qa_flows: list[dict[str, Any]],
+    candidates: list[dict[str, Any]],
+    expansions: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    selected_by_qa: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    expansions_by_qa: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in candidates:
+        if row["selected"]:
+            selected_by_qa[row["reference_qa_id"]].append(row)
+    for row in expansions:
+        expansions_by_qa[row["reference_qa_id"]].append(row)
+
+    rows = []
+    for qa_flow in qa_flows:
+        qa_id = qa_flow["reference_qa_id"]
+        anchors = sorted(
+            selected_by_qa[qa_id],
+            key=lambda row: (row["claim_sequence"], row["rank"]),
+        )
+        contexts = sorted(
+            expansions_by_qa[qa_id],
+            key=lambda row: (
+                row["reference_claim_id"],
+                row["traversal_step"],
+            ),
+        )
+        traversal = []
+        articles = []
+        for anchor in anchors:
+            traversal.append(
+                f"ANCHOR:{anchor['source_id']}:{anchor['article_citation_label']}"
+            )
+            articles.append(
+                f"{anchor['source_id']}:{anchor['article_citation_label']}"
+            )
+            for context in contexts:
+                if (
+                    context["anchor_proposition_id"]
+                    != anchor["evidence_proposition_id"]
+                ):
+                    continue
+                traversal.append(
+                    f"{context['expansion_relation']}:"
+                    f"{context['source_id']}:"
+                    f"{context['article_citation_label']}:"
+                    f"{context['citation_label']}"
+                )
+                articles.append(
+                    f"{context['source_id']}:"
+                    f"{context['article_citation_label']}"
+                )
+        rows.append(
+            {
+                "reference_qa_id": qa_id,
+                "traversal_flow": traversal,
+                "visited_articles": list(dict.fromkeys(articles)),
+                "anchor_count": len(anchors),
+                "expanded_context_count": len(contexts),
+            }
+        )
+    return rows

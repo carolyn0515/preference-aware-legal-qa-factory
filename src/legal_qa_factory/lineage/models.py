@@ -69,3 +69,33 @@ QA_FLOW_SCHEMA = pa.schema(
         pa.field("candidate_grounding_rate", pa.float32(), nullable=False),
     ]
 )
+
+CLAIM_EVIDENCE_EXPANSION_SCHEMA = pa.schema(
+    [
+        pa.field("reference_claim_id", pa.string(), nullable=False),
+        pa.field("reference_qa_id", pa.string(), nullable=False),
+        pa.field("anchor_proposition_id", pa.string(), nullable=False),
+        pa.field("context_proposition_id", pa.string(), nullable=False),
+        pa.field("context_legal_node_id", pa.string(), nullable=False),
+        pa.field("source_id", pa.string(), nullable=False),
+        pa.field("article_citation_label", pa.string(), nullable=False),
+        pa.field("citation_label", pa.string(), nullable=False),
+        pa.field("node_type", pa.string(), nullable=False),
+        pa.field("context_text", pa.large_string(), nullable=False),
+        pa.field("expansion_relation", pa.string(), nullable=False),
+        pa.field("expansion_reasons", pa.list_(pa.string()), nullable=False),
+        pa.field("anchor_score", pa.float32(), nullable=False),
+        pa.field("expansion_score", pa.float32(), nullable=False),
+        pa.field("traversal_step", pa.int32(), nullable=False),
+    ]
+)
+
+QA_TREE_FLOW_SCHEMA = pa.schema(
+    [
+        pa.field("reference_qa_id", pa.string(), nullable=False),
+        pa.field("traversal_flow", pa.list_(pa.string()), nullable=False),
+        pa.field("visited_articles", pa.list_(pa.string()), nullable=False),
+        pa.field("anchor_count", pa.int32(), nullable=False),
+        pa.field("expanded_context_count", pa.int32(), nullable=False),
+    ]
+)

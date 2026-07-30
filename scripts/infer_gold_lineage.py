@@ -9,15 +9,23 @@ import pyarrow.parquet as pq
 
 from legal_qa_factory.common.io import atomic_yaml_dump, load_yaml
 from legal_qa_factory.lineage.evidence_alignment import align_claim
+from legal_qa_factory.lineage.hierarchy_expander import (
+    build_article_indexes,
+    expand_anchor,
+    proposition_indexes,
+)
 from legal_qa_factory.lineage.models import (
+    CLAIM_EVIDENCE_EXPANSION_SCHEMA,
     CLAIM_EVIDENCE_SCHEMA,
     CLAIM_FEATURE_SCHEMA,
     QA_FLOW_SCHEMA,
+    QA_TREE_FLOW_SCHEMA,
 )
 from legal_qa_factory.lineage.quality import validate_lineage
 from legal_qa_factory.lineage.trace_builder import (
     aggregate_flow_patterns,
     build_qa_flows,
+    build_tree_flows,
 )
 from legal_qa_factory.retrieval.lexical import BM25Index
 from legal_qa_factory.retrieval.traversal import build_node_indexes
@@ -97,7 +105,9 @@ def main() -> None:
     manifest = load_yaml(dataset_dir / "manifest.yaml")
     claims = pq.read_table(dataset_dir / "reference_claims.parquet").to_pylist()
     propositions, nodes, functions, function_usable = load_legal_corpus()
-    nodes_by_id, _ = build_node_indexes(nodes)
+    nodes_by_id, children_by_node = build_node_indexes(nodes)
+    _, propositions_by_node = proposition_indexes(propositions)
+    article_nodes, decree_reference_index = build_article_indexes(nodes)
     index = BM25Index(propositions, text_field="retrieval_text")
 
     features, candidates = [], []
@@ -118,6 +128,27 @@ def main() -> None:
         {row["proposition_id"] for row in propositions},
     )
     flows = build_qa_flows(features, candidates)
+    features_by_claim = {
+        row["reference_claim_id"]: row for row in features
+    }
+    expansions = []
+    for anchor in candidates:
+        if not anchor["selected"]:
+            continue
+        expansions.extend(
+            expand_anchor(
+                anchor=anchor,
+                answer_roles=features_by_claim[anchor["reference_claim_id"]][
+                    "answer_roles"
+                ],
+                propositions_by_node=propositions_by_node,
+                nodes_by_id=nodes_by_id,
+                children_by_node=children_by_node,
+                article_nodes=article_nodes,
+                decree_reference_index=decree_reference_index,
+            )
+        )
+    tree_flows = build_tree_flows(flows, candidates, expansions)
     flow_patterns = aggregate_flow_patterns(flows)
     artifact_dir = dataset_dir / "lineage"
     artifact_dir.mkdir(parents=True, exist_ok=True)
@@ -132,6 +163,16 @@ def main() -> None:
         artifact_dir / "claim_evidence_candidates.parquet",
     )
     write_parquet(flows, QA_FLOW_SCHEMA, artifact_dir / "qa_flows.parquet")
+    write_parquet(
+        expansions,
+        CLAIM_EVIDENCE_EXPANSION_SCHEMA,
+        artifact_dir / "claim_evidence_expansions.parquet",
+    )
+    write_parquet(
+        tree_flows,
+        QA_TREE_FLOW_SCHEMA,
+        artifact_dir / "qa_tree_flows.parquet",
+    )
     atomic_yaml_dump(flow_patterns, artifact_dir / "flow_patterns.yaml")
 
     relation_counts: dict[str, int] = defaultdict(int)
@@ -141,7 +182,7 @@ def main() -> None:
     atomic_yaml_dump(
         {
             "schema_version": "1.0",
-            "lineage_method": "BM25_TREE_PATH_V1",
+            "lineage_method": "BM25_TREE_EXPANSION_V2",
             "lineage_kind": "INFERRED",
             "truth_semantics": "CANDIDATE_EVIDENCE_ONLY",
             "input_sha256": manifest["input_sha256"],
@@ -151,6 +192,8 @@ def main() -> None:
                 row["selected"] for row in candidates
             ),
             "qa_flow_count": len(flows),
+            "expanded_context_count": len(expansions),
+            "tree_flow_count": len(tree_flows),
             "legal_function_usable": function_usable,
             "legal_function_note": (
                 None
