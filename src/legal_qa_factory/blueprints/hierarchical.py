@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import math
 from collections import Counter, defaultdict
+from statistics import median
 from typing import Any
 
+from legal_qa_factory.blueprints.compiler import question_features
 from legal_qa_factory.blueprints.ranking import _question_similarity
 
 PATTERN_FAMILIES = (
@@ -130,6 +132,142 @@ def rank_components(
     return sorted(universe, key=lambda value: (-scores[value], value))
 
 
+def _family_component_ranking(
+    query: dict[str, Any],
+    family_rows: list[dict[str, Any]],
+    field: str,
+    *,
+    k: int,
+) -> tuple[list[str], list[str], int]:
+    universe = sorted(
+        {value for row in family_rows for value in row[field]}
+    )
+    required = sorted(
+        set.intersection(
+            *(set(row[field]) for row in family_rows)
+        )
+    )
+    prevalence: Counter[str] = Counter()
+    for row in family_rows:
+        prevalence.update(set(row[field]))
+    neighbors = sorted(
+        (
+            (_question_similarity(query, row), row)
+            for row in family_rows
+        ),
+        key=lambda item: (-item[0], item[1]["reference_qa_id"]),
+    )[:k]
+    neighbor_scores: Counter[str] = Counter()
+    for similarity, row in neighbors:
+        for value in set(row[field]):
+            neighbor_scores[value] += similarity
+    ranking = sorted(
+        universe,
+        key=lambda value: (
+            -neighbor_scores[value],
+            -prevalence[value],
+            value,
+        ),
+    )
+    target_count = round(
+        median(len(set(row[field])) for row in family_rows)
+    )
+    return ranking, required, max(target_count, len(required))
+
+
+def _select_ranked_components(
+    ranking: list[str], required: list[str], target_count: int
+) -> list[str]:
+    selected = set(required)
+    for value in ranking:
+        if len(selected) >= target_count:
+            break
+        selected.add(value)
+    return [value for value in ranking if value in selected]
+
+
+def recommend_hierarchical(
+    question: str,
+    training_rows: list[dict[str, Any]],
+    *,
+    k: int = 5,
+    top_families: int = 2,
+) -> dict[str, Any]:
+    if not training_rows:
+        raise ValueError("policy training dataset is empty")
+    if k < 1 or top_families < 1:
+        raise ValueError("k and top_families must be positive")
+    query = question_features(question)
+    family_ranking = rank_families(query, training_rows, k=k)
+    selected_families = family_ranking[: min(top_families, len(family_ranking))]
+    score_total = sum(row["score"] for row in selected_families)
+    blueprints = []
+    for family_rank, family_result in enumerate(selected_families, start=1):
+        family = family_result["pattern_family"]
+        family_rows = [
+            row for row in training_rows if row["pattern_family"] == family
+        ]
+        independent_family_support = len(
+            {row["parent_example_id"] for row in family_rows}
+        )
+        component_rows = family_rows or training_rows
+        action_ranking, required_actions, action_count = (
+            _family_component_ranking(
+                query,
+                component_rows,
+                "retrieval_actions",
+                k=k,
+            )
+        )
+        role_ranking, required_roles, role_count = _family_component_ranking(
+            query,
+            component_rows,
+            "answer_flow",
+            k=k,
+        )
+        selected_actions = _select_ranked_components(
+            action_ranking, required_actions, action_count
+        )
+        selected_roles = _select_ranked_components(
+            role_ranking, required_roles, role_count
+        )
+        blueprints.append(
+            {
+                "family_rank": family_rank,
+                "pattern_family": family,
+                "family_score": round(family_result["score"], 6),
+                "family_score_share": round(
+                    (
+                        family_result["score"] / score_total
+                        if score_total
+                        else 0.0
+                    ),
+                    6,
+                ),
+                "required_retrieval_actions": required_actions,
+                "retrieval_action_ranking": action_ranking,
+                "selected_retrieval_actions": selected_actions,
+                "required_answer_roles": required_roles,
+                "answer_role_ranking": role_ranking,
+                "selected_answer_roles": selected_roles,
+                "independent_family_support": independent_family_support,
+                "component_source": (
+                    "FAMILY_HISTORY"
+                    if family_rows
+                    else "GLOBAL_FALLBACK"
+                ),
+            }
+        )
+    return {
+        "method": "HIERARCHICAL_BLUEPRINT_RANKER_V1",
+        "status": "EXPERIMENTAL_SYNTHETIC_LABELS",
+        "question": question,
+        "question_features": query,
+        "routing_policy": "EXECUTE_TOP_2_THEN_EVIDENCE_RERANK",
+        "blueprints": blueprints,
+    }
+
+
 def _average_precision(
     ranking: list[str], expected: set[str]
 ) -> float:
@@ -210,4 +348,3 @@ def evaluate_hierarchical_ranker(
         },
         "predictions": predictions,
     }
-
