@@ -1,3 +1,18 @@
 schema_version: "1.0"
 dataset: {name: "retrieval_blueprint", layer: "ARTIFACT"}
 grain: "one immutable retrieval-policy version"
+learning_problem:
+  input: "question features available before retrieval"
+  target:
+    - "answer_flow"
+    - "retrieval_actions"
+    - "requires_decree"
+    - "requires_exception_search"
+  prohibited_target: "answer text"
+label_provenance:
+  allowed: ["INFERRED", "HUMAN_REVIEWED"]
+  production_preferred: "HUMAN_REVIEWED"
+quality_rules:
+  - "synthetic examples must not silently become production training data"
+  - "question features must not include answer-derived information"
+  - "similar questions must be group-split during model evaluation"
