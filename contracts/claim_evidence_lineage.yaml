@@ -2,3 +2,17 @@ schema_version: "1.0"
 dataset: {name: "claim_evidence_lineage", layer: "ARTIFACT"}
 grain: "one observed or inferred claim-to-evidence edge"
 lineage_kinds: ["OBSERVED", "INFERRED"]
+truth_semantics: "CANDIDATE_EVIDENCE_ONLY until human review"
+required_fields:
+  - "reference_claim_id"
+  - "evidence_proposition_id"
+  - "lineage_kind"
+  - "retrieval_relation"
+  - "final_score"
+  - "rank"
+  - "selected"
+quality_rules:
+  - "INFERRED edges must not be rewritten as OBSERVED"
+  - "every evidence_proposition_id must resolve in the active Silver snapshot"
+  - "scores must remain within [0, 1]"
+  - "mixed legal-function prompt/schema versions disable label-based scoring"
