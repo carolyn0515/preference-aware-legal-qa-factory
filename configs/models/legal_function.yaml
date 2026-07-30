@@ -1,0 +1,15 @@
+schema_version: "1.0"
+provider_env: "LLM_PROVIDER"
+default_provider: "gemini"
+providers:
+  gemini:
+    model_env: "GEMINI_MODEL"
+    default_model: "gemini-3.5-flash"
+  openai:
+    model_env: "OPENAI_MODEL"
+    default_model: "gpt-5.6-terra"
+reasoning_effort_env: "OPENAI_REASONING_EFFORT"
+default_reasoning_effort: "low"
+batch_size: 8
+prompt_id: "legal_function_semantic_frame_v4"
+cache_namespace: "legal_function_v4"
