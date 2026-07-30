@@ -1,0 +1,17 @@
+schema_version: "1.0"
+reranker_id: structural_evidence_reranker_v1
+
+weights:
+  question_relevance: 0.50
+  query_coverage: 0.30
+  hierarchy_proximity: 0.20
+
+execution:
+  anchor_k: 3
+  expansion_limit_per_anchor: 12
+  evidence_k_per_branch: 8
+
+selection:
+  branch_score_top_n: 3
+  policy: HIGHEST_MEAN_TOP_EVIDENCE_SCORE
+
