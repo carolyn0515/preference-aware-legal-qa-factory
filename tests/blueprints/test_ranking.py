@@ -2,6 +2,7 @@ from legal_qa_factory.blueprints.ranking import (
     blueprint_relevance,
     lcs_similarity,
     ranking_metrics,
+    semantic_compatibility,
     weighted_jaccard,
 )
 
@@ -44,3 +45,22 @@ def test_ranking_metrics_reward_near_top_exact_match() -> None:
     assert metrics["recall@1"] == 0.0
     assert metrics["recall@3"] == 1.0
     assert 0 < metrics["ndcg@3"] < 1
+
+
+def test_semantic_compatibility_matches_question_intent_to_blueprint() -> None:
+    query = {"question_intents": ["SANCTION"]}
+    matching = {
+        "answer_flow": ["CONCLUSION", "SANCTION_NOTICE"],
+        "retrieval_actions": [
+            "SEARCH_ANCHOR",
+            "FOLLOW_DECREE_DELEGATION",
+        ],
+    }
+    unrelated = {
+        "answer_flow": ["CONCLUSION"],
+        "retrieval_actions": ["SEARCH_ANCHOR"],
+    }
+
+    assert semantic_compatibility(
+        query, matching
+    ) > semantic_compatibility(query, unrelated)

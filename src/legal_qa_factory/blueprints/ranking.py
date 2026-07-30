@@ -6,6 +6,29 @@ from typing import Any
 
 from legal_qa_factory.blueprints.registry import _cosine
 
+INTENT_BLUEPRINT_EXPECTATIONS = {
+    "CONDITION_LOOKUP": {
+        "roles": {"CONDITION"},
+        "actions": {"EXPAND_CHILDREN"},
+    },
+    "EXCEPTION_LOOKUP": {
+        "roles": {"EXCEPTION_NOTICE"},
+        "actions": {"SEARCH_ROLE_SIBLINGS"},
+    },
+    "PROCEDURE": {
+        "roles": {"PROCEDURE"},
+        "actions": {"EXPAND_CHILDREN"},
+    },
+    "DEADLINE": {
+        "roles": {"CONDITION"},
+        "actions": {"SEARCH_ROLE_SIBLINGS"},
+    },
+    "SANCTION": {
+        "roles": {"SANCTION_NOTICE"},
+        "actions": {"FOLLOW_DECREE_DELEGATION"},
+    },
+}
+
 
 def weighted_jaccard(
     left: list[str],
@@ -120,6 +143,28 @@ def _question_similarity(
     return 0.8 * lexical + 0.2 * intent
 
 
+def semantic_compatibility(
+    query: dict[str, Any], candidate: dict[str, Any]
+) -> float:
+    expected_roles: set[str] = set()
+    expected_actions: set[str] = {"SEARCH_ANCHOR"}
+    for intent in query["question_intents"]:
+        expectation = INTENT_BLUEPRINT_EXPECTATIONS.get(intent)
+        if expectation:
+            expected_roles.update(expectation["roles"])
+            expected_actions.update(expectation["actions"])
+    if not expected_roles:
+        expected_roles.add("CONCLUSION")
+
+    candidate_roles = set(candidate["answer_flow"])
+    candidate_actions = set(candidate["retrieval_actions"])
+    role_recall = len(expected_roles & candidate_roles) / len(expected_roles)
+    action_recall = len(expected_actions & candidate_actions) / len(
+        expected_actions
+    )
+    return 0.6 * role_recall + 0.4 * action_recall
+
+
 def rank_candidates(
     query: dict[str, Any],
     training_rows: list[dict[str, Any]],
@@ -127,6 +172,7 @@ def rank_candidates(
     config: dict[str, Any],
     *,
     k: int,
+    semantic_rerank: bool = False,
 ) -> list[dict[str, Any]]:
     neighbors = sorted(
         (
@@ -135,20 +181,36 @@ def rank_candidates(
         ),
         key=lambda item: (-item[0], item[1]["reference_qa_id"]),
     )[:k]
-    scores: dict[str, float] = defaultdict(float)
+    neighbor_scores: dict[str, float] = defaultdict(float)
     normalizer = sum(similarity for similarity, _ in neighbors)
     for candidate in candidates:
         for similarity, neighbor in neighbors:
             relevance, _ = blueprint_relevance(neighbor, candidate, config)
-            scores[candidate["pattern_id"]] += similarity * relevance
+            neighbor_scores[candidate["pattern_id"]] += similarity * relevance
         if normalizer:
-            scores[candidate["pattern_id"]] /= normalizer
+            neighbor_scores[candidate["pattern_id"]] /= normalizer
+    prediction = config["prediction"]
+    scores = {}
+    for candidate in candidates:
+        neighbor_score = neighbor_scores[candidate["pattern_id"]]
+        compatibility = semantic_compatibility(query, candidate)
+        scores[candidate["pattern_id"]] = (
+            prediction["neighbor_relevance_weight"] * neighbor_score
+            + (
+                prediction["semantic_compatibility_weight"] * compatibility
+                if semantic_rerank
+                else 0.0
+            )
+        )
     return sorted(
         (
             {
                 **candidate,
                 "predicted_relevance": round(
                     scores[candidate["pattern_id"]], 6
+                ),
+                "semantic_compatibility": round(
+                    semantic_compatibility(query, candidate), 6
                 ),
             }
             for candidate in candidates
@@ -193,6 +255,7 @@ def evaluate_grouped_ranker(
     config: dict[str, Any],
     *,
     k: int,
+    semantic_rerank: bool = False,
 ) -> dict[str, Any]:
     candidates = candidate_registry(policy_rows)
     group_ids = sorted({row["parent_example_id"] for row in policy_rows})
@@ -211,7 +274,12 @@ def evaluate_grouped_ranker(
         ]
         for query in held_out:
             ranked = rank_candidates(
-                query, training, candidates, config, k=k
+                query,
+                training,
+                candidates,
+                config,
+                k=k,
+                semantic_rerank=semantic_rerank,
             )
             grades = {
                 candidate["pattern_id"]: blueprint_relevance(
@@ -254,7 +322,11 @@ def evaluate_grouped_ranker(
         for name in metric_names
     }
     return {
-        "model_id": f"{config['ranker_id']}_k{k}",
+        "model_id": (
+            f"{config['ranker_id']}_semantic_v2_k{k}"
+            if semantic_rerank
+            else f"{config['ranker_id']}_v1_k{k}"
+        ),
         "evaluation_strategy": config["evaluation"]["split_strategy"],
         "physical_query_count": len(policy_rows),
         "independent_group_count": len(group_ids),
@@ -262,4 +334,3 @@ def evaluate_grouped_ranker(
         "metrics": aggregate,
         "predictions": predictions,
     }
-

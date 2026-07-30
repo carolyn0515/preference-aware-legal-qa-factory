@@ -29,10 +29,17 @@ def main() -> None:
     args = parse_args()
     rows = pq.read_table(args.training_data).to_pylist()
     config = load_yaml(args.config)
-    results = [
-        evaluate_grouped_ranker(rows, config, k=k)
-        for k in config["prediction"]["k_values"]
-    ]
+    results = []
+    for semantic_rerank in (False, True):
+        results.extend(
+            evaluate_grouped_ranker(
+                rows,
+                config,
+                k=k,
+                semantic_rerank=semantic_rerank,
+            )
+            for k in config["prediction"]["k_values"]
+        )
     leader = max(
         results,
         key=lambda result: (
@@ -72,4 +79,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
