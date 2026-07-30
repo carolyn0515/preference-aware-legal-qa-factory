@@ -1,0 +1,79 @@
+schema_version: "1.0"
+dataset:
+  customer_id: HYUNDAI_ENGINEERING
+  reference_version: synthetic_v3
+  source_kind: SYNTHETIC
+  target_count: 312
+
+seed:
+  path: examples/reference_gold.synthetic_v2.jsonl
+  expected_count: 24
+
+generation:
+  include_seed_form: true
+  variants_per_seed: 12
+  method: deterministic_context_expansion_v1
+  variants:
+    - id: concise
+      question_type: PARAPHRASE
+      difficulty: BASIC
+      prefix: "간단히 확인하고 싶습니다. "
+    - id: contract_review
+      question_type: SCENARIO
+      difficulty: INTERMEDIATE
+      prefix: "하도급 계약서를 검토하고 있습니다. "
+    - id: pre_approval
+      question_type: SCENARIO
+      difficulty: INTERMEDIATE
+      prefix: "사내 결재 전에 법적 기준을 확인하려고 합니다. "
+    - id: field_inquiry
+      question_type: SCENARIO
+      difficulty: INTERMEDIATE
+      prefix: "현업 부서에서 다음 사항을 문의했습니다. "
+    - id: risk_review
+      question_type: HARD_CASE
+      difficulty: ADVANCED
+      prefix: "법 위반 위험을 검토하는 상황입니다. "
+    - id: evidence_review
+      question_type: HARD_CASE
+      difficulty: ADVANCED
+      prefix: "관련 계약서와 증빙을 확인하기 전에 원칙부터 알고 싶습니다. "
+    - id: subcontractor_view
+      question_type: PARAPHRASE
+      difficulty: INTERMEDIATE
+      prefix: "수급사업자 관점에서 확인하면, "
+    - id: prime_contractor_view
+      question_type: PARAPHRASE
+      difficulty: INTERMEDIATE
+      prefix: "원사업자 관점에서 확인하면, "
+    - id: exception_check
+      question_type: HARD_CASE
+      difficulty: ADVANCED
+      prefix: "예외나 추가 요건이 있는지도 포함해서 확인하고 싶습니다. "
+    - id: action_check
+      question_type: SCENARIO
+      difficulty: INTERMEDIATE
+      prefix: "실제 조치 전에 판단 기준을 확인하고 있습니다. "
+    - id: audit_check
+      question_type: HARD_CASE
+      difficulty: ADVANCED
+      prefix: "내부 감사에서 문제 될 수 있는지 검토 중입니다. "
+    - id: faq_style
+      question_type: PARAPHRASE
+      difficulty: BASIC
+      prefix: "실무 FAQ 형식으로 질문드립니다. "
+
+quality:
+  require_evidence: true
+  require_parent_example_id: true
+  reject_duplicate_questions: true
+  allowed_question_types:
+    - BASE
+    - PARAPHRASE
+    - SCENARIO
+    - HARD_CASE
+  allowed_difficulties:
+    - BASIC
+    - INTERMEDIATE
+    - ADVANCED
+

@@ -1,0 +1,48 @@
+schema_version: '1.0'
+reference_version: synthetic_v3
+source_kind: SYNTHETIC
+generation_method: deterministic_context_expansion_v1
+seed_count: 24
+row_count: 312
+parent_group_count: 24
+question_type_counts:
+  BASE: 24
+  HARD_CASE: 96
+  PARAPHRASE: 96
+  SCENARIO: 96
+difficulty_counts:
+  ADVANCED: 96
+  BASIC: 72
+  INTERMEDIATE: 144
+topic_counts:
+  administrative_fine: 13
+  advance_payment: 13
+  cancellation: 13
+  cost_adjustment: 13
+  customs_refund: 13
+  design_change: 13
+  direct_payment: 13
+  dispute_mediation: 13
+  economic_benefit: 13
+  forced_purchase: 13
+  in_kind_payment: 13
+  inspection: 13
+  investigation_limit: 13
+  management_interference: 13
+  payment_guarantee: 13
+  price_reduction: 13
+  retaliation: 13
+  subcontract_payment: 13
+  technical_data: 13
+  unfair_price: 13
+  unfair_return: 13
+  unfair_special_terms: 13
+  violation_report: 13
+  written_contract: 13
+split_policy: GROUP_BY_PARENT_EXAMPLE_ID
+plan_path: /Users/carolyn/Desktop/work/preference-aware-legal-qa-factory/configs/generation/synthetic_v3.yaml
+plan_sha256: 19b09db25c6a95757af9b25dd0bc1ca6defdf5201a09f61579c3f9755a94ac7e
+seed_path: /Users/carolyn/Desktop/work/preference-aware-legal-qa-factory/examples/reference_gold.synthetic_v2.jsonl
+seed_sha256: 6c93d8f6d438ab18ba19dff6165f78a64be38998ddaee3e47b0e937a3896e958
+output_path: /Users/carolyn/Desktop/work/preference-aware-legal-qa-factory/examples/reference_gold.synthetic_v3.jsonl
+output_sha256: bd892b61d1a6e66f1ad21e72877d5f4809c52ed61fb7c856871d6522b1553976
