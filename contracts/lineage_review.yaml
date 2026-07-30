@@ -1,0 +1,17 @@
+schema_version: "1.0"
+dataset: {name: "lineage_human_review", layer: "ARTIFACT"}
+grain: "one human decision over one inferred answer, evidence, or retrieval row"
+decision_sets:
+  answer: ["CORRECT", "CHANGE", "REMOVE"]
+  evidence:
+    - "CORRECT"
+    - "PARTIAL"
+    - "IRRELEVANT"
+    - "NO_EVIDENCE_APPROPRIATE"
+    - "MISSING_EVIDENCE"
+  retrieval: ["REQUIRED", "OPTIONAL", "UNNECESSARY"]
+integrity:
+  - "system columns are protected by system_row_sha256"
+  - "reviewer is mandatory"
+  - "inferred artifacts remain immutable"
+  - "synthetic rows remain production-ineligible after review"
