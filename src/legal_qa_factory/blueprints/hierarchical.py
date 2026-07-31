@@ -54,8 +54,8 @@ def rank_families(
     training_rows: list[dict[str, Any]],
     *,
     k: int,
-    neighbor_weight: float = 0.55,
-    intent_weight: float = 0.45,
+    neighbor_weight: float = 0.35,
+    intent_weight: float = 0.65,
 ) -> list[dict[str, Any]]:
     neighbors = sorted(
         (
@@ -195,6 +195,13 @@ def recommend_hierarchical(
 ) -> dict[str, Any]:
     if not training_rows:
         raise ValueError("policy training dataset is empty")
+    training_rows = [
+        row
+        for row in training_rows
+        if row.get("ranking_training_eligible", True)
+    ]
+    if not training_rows:
+        raise ValueError("no ranking-eligible policy rows")
     if k < 1 or top_families < 1:
         raise ValueError("k and top_families must be positive")
     query = question_features(question)
@@ -285,6 +292,9 @@ def _average_precision(
 def evaluate_hierarchical_ranker(
     rows: list[dict[str, Any]], *, k: int
 ) -> dict[str, Any]:
+    rows = [
+        row for row in rows if row.get("ranking_training_eligible", True)
+    ]
     groups = sorted({row["parent_example_id"] for row in rows})
     metrics: dict[str, list[float]] = defaultdict(list)
     predictions = []

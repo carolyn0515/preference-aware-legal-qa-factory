@@ -17,7 +17,6 @@ QUESTION_MARKERS = {
     "DEFINITION": ("무엇", "뜻", "정의"),
 }
 
-
 def question_features(question: str) -> dict[str, Any]:
     intents = [
         intent
@@ -99,6 +98,23 @@ def pattern_family(
     return "DIRECT_RULE"
 
 
+def routing_family(reference_intent: str, lineage_family: str) -> str:
+    if reference_intent == "sanction":
+        return "SANCTION_REMEDY"
+    if reference_intent == "deadline":
+        return "DEADLINE_CALCULATION"
+    if reference_intent in {"procedure", "permission"}:
+        return "PROCEDURE_DELEGATION"
+    if reference_intent in {"condition_lookup", "exception_lookup"}:
+        return "CONDITION_EXCEPTION"
+    if reference_intent in {
+        "prohibition",
+        "document_issuance",
+    }:
+        return "DIRECT_RULE"
+    return lineage_family
+
+
 def compile_training_rows(
     qa_rows: list[dict[str, Any]],
     qa_flows: list[dict[str, Any]],
@@ -124,6 +140,14 @@ def compile_training_rows(
             "parent_example_id", qa["reference_qa_id"]
         )
         reference_intent = metadata.get("intent", "unknown")
+        reference_topic = metadata.get("topic", "unknown")
+        generation_variant_id = metadata.get("variant_id", "unknown")
+        ranking_training_eligible = (
+            generation_variant_id != "exception_check"
+        )
+        lineage_family = pattern_family(
+            reference_intent, answer_flow, retrieval_actions
+        )
         training_rows.append(
             {
                 "reference_qa_id": qa_id,
@@ -134,11 +158,21 @@ def compile_training_rows(
                 "question": qa["question"],
                 **question_features(qa["question"]),
                 "pattern_id": pattern_id,
-                "pattern_family": pattern_family(
-                    reference_intent, answer_flow, retrieval_actions
+                "pattern_family": routing_family(
+                    reference_intent, lineage_family
                 ),
+                "lineage_pattern_family": lineage_family,
                 "family_label_source": (
-                    "REFERENCE_METADATA_AND_LINEAGE_RULE_V1"
+                    "REFERENCE_INTENT_ROUTING_V2"
+                ),
+                "reference_intent": reference_intent,
+                "reference_topic": reference_topic,
+                "generation_variant_id": generation_variant_id,
+                "ranking_training_eligible": ranking_training_eligible,
+                "ranking_exclusion_reason": (
+                    None
+                    if ranking_training_eligible
+                    else "QUESTION_INTENT_CHANGED_WITHOUT_ANSWER_REGENERATION"
                 ),
                 "answer_flow": answer_flow,
                 "retrieval_actions": retrieval_actions,
